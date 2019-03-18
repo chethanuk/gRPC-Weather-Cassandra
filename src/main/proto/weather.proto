@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package blog;
+
+option java_package = "com.proto.blog";
+
+option java_multiple_files = true;
+
+
+message AvgCityTempRequest {
+    string city = 1;
+}
+
+message AvgCityTempResponse {
+    string date = 1;
+    double avg_temp = 2;
+}
+
+message InsertAvgCityTempRequest {
+    string date = 1;
+    double avg_temp = 2;
+}
+
+message InsertAvgCityTempResponse {
+    string date = 1;
+    double avg_temp = 2;
+}
+
+message ReadAvgCityTempRequest {
+    string date = 1;
+    double avg_temp = 2;
+}
+
+message ReadAvgCityTempResponse {
+    string date = 1;
+    double avg_temp = 2;
+}
+
+service WeatherService {
+    // rpc
+    rpc AvgCityTemp (AvgCityTempRequest) returns (AvgCityTempResponse) {
+    };
+
+    rpc ReadAvgCityTemp (ReadAvgCityTempRequest) returns (ReadAvgCityTempResponse) {
+    };
+
+    rpc InsertAvgCityTemp (InsertAvgCityTempRequest) returns (InsertAvgCityTempResponse) {
+    };
+
+}
