@@ -1,8 +1,6 @@
 package weather.client;
 
-import com.proto.blog.AvgCityTempRequest;
-import com.proto.blog.AvgCityTempResponse;
-import com.proto.blog.WeatherServiceGrpc;
+import com.proto.blog.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -31,5 +29,13 @@ public class WeatherClient {
                         .build());
 
         System.out.println("Average Temp of city: " + avgCityTempResponse.toString());
+
+        InsertAvgCityTempResponse insertAvgCityTempResponse =
+                weatherServiceBlockingStub.insertAvgCityTemp(InsertAvgCityTempRequest.newBuilder()
+                        .setDate("2019/05/12")
+                        .setAvgTemp(35.5)
+                        .build());
+
+
     }
 }

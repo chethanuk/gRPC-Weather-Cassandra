@@ -28,7 +28,6 @@ message InsertAvgCityTempResponse {
 
 message ReadAvgCityTempRequest {
     string date = 1;
-    double avg_temp = 2;
 }
 
 message ReadAvgCityTempResponse {
@@ -41,7 +40,7 @@ service WeatherService {
     rpc AvgCityTemp (AvgCityTempRequest) returns (AvgCityTempResponse) {
     };
 
-    rpc ReadAvgCityTemp (ReadAvgCityTempRequest) returns (ReadAvgCityTempResponse) {
+    rpc ReadAvgCityTemp (ReadAvgCityTempRequest) returns (stream ReadAvgCityTempResponse) {
     };
 
     rpc InsertAvgCityTemp (InsertAvgCityTempRequest) returns (InsertAvgCityTempResponse) {

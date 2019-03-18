@@ -1,13 +1,14 @@
 package weather.server;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
+import com.datastax.driver.core.policies.DefaultRetryPolicy;
+import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.proto.blog.AvgCityTempRequest;
-import com.proto.blog.AvgCityTempResponse;
-import com.proto.blog.WeatherServiceGrpc;
+import com.proto.blog.*;
 import io.grpc.stub.StreamObserver;
 import org.bson.Document;
 
@@ -19,6 +20,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
 
+import static com.datastax.driver.core.Cluster.builder;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+
 public class WeatherServerImpl extends WeatherServiceGrpc.WeatherServiceImplBase {
 
 //    // Create a mongo Client: Used in rest of methods to access mongoDB
@@ -29,9 +33,11 @@ public class WeatherServerImpl extends WeatherServiceGrpc.WeatherServiceImplBase
 //    // get Collection named "blog
 //    private MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("city");
 
-    final Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1")
-            .build();
-    final Session session = cluster.connect("example");
+    Cluster cluster;
+    Session session;
+    ResultSet results;
+    Row rows;
+
 
     private JsonArray callAPIUrl(String url) {
         JsonArray jsonArray = null;
@@ -138,5 +144,77 @@ public class WeatherServerImpl extends WeatherServiceGrpc.WeatherServiceImplBase
         responseObserver.onCompleted();
     }
 
+//    @Override
+//    public void readAvgCityTemp(ReadAvgCityTempRequest request, StreamObserver<ReadAvgCityTempResponse> responseObserver) {
+//
+//        // connect to our Cassandra cluster and create a session instance.
+//        // running a cluster instead of a single instance
+//        // retry policy determines the default behavior to adopt when a request either times out or a node is unavailable
+//        // on a read timeout, when enough replicas have replied but the data wasn’t received.
+//        // on a write timeout, if we timeout while writing the log used by batch statements.
+//        cluster = builder()
+//                .addContactPoint("127.0.0.1")
+//                .withRetryPolicy(DefaultRetryPolicy.INSTANCE)
+//                // A load balancing policy will determine which node it is to run a query. Since a client can read or write to any node, sometimes that can be inefficient.
+//                // If a node receives a read or write owned on another node, it will coordinate that request for the client.
+//                .withLoadBalancingPolicy(
+//                        new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
+//                .build();
+//        session = cluster.connect("example");
+//
+//        String date = request.getDate();
+//
+//        // Use select to get the user we just entered
+//        Statement select = QueryBuilder.select().all().from("example", "avgTable")
+//                .where(eq("date", date));
+//        results = session.execute(select);
+//        for (Row row : results) {
+//            System.out.format("%s %d \n", row.getString("firstname"),
+//                    row.getInt("age"));
+//        }
+//
+//        Double avgTemp = request.getAvgTemp();
+//
+//        session.execute(boundStatement.bind(date, avgTemp));
+//
+//        responseObserver.onNext(ReadAvgCityTempResponse.newBuilder()
+//                .setAvgTemp(avgTemp)
+//                .setDate(date)
+//                .build());
+//
+//        responseObserver.onCompleted();
+//
+//    }
+
+    @Override
+    public void insertAvgCityTemp(InsertAvgCityTempRequest request, StreamObserver<InsertAvgCityTempResponse> responseObserver) {
+        cluster = builder()
+                .addContactPoint("127.0.0.1")
+                .withRetryPolicy(DefaultRetryPolicy.INSTANCE)
+                .withLoadBalancingPolicy(
+                        new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
+                .build();
+        session = cluster.connect("example");
+
+
+        // Insert one record into the users table
+        PreparedStatement statement = session.prepare(
+                "INSERT INTO avgtemp" + "(date, avgtemp)"
+                        + "VALUES (?,?);");
+
+        BoundStatement boundStatement = new BoundStatement(statement);
+
+        String date = request.getDate();
+        Double avgTemp = request.getAvgTemp();
+
+        session.execute(boundStatement.bind(date, avgTemp));
+
+        responseObserver.onNext(InsertAvgCityTempResponse.newBuilder()
+                .setAvgTemp(avgTemp)
+                .setDate(date)
+                .build());
+
+        responseObserver.onCompleted();
+    }
 }
 
